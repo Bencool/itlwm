@@ -385,14 +385,25 @@ struct apple80211_virt_if_delete_data {
 
 struct apple80211_ht_capability {
     uint32_t    version;
-    uint8_t     unk1;
-    uint8_t     unk2;
-    uint16_t    unk3;
-    uint8_t     unk4;
-    uint8_t     unk5[16];
-    uint16_t    unk6;
-    uint        unk7;
-    uint8_t     unk8;
+    uint8_t     hc_id;              /* element ID */
+    uint8_t     hc_len;             /* length in bytes */
+    uint16_t    hc_cap;             /* HT caps (see below) */
+    uint8_t     hc_param;           /* HT params (see below) */
+    uint8_t     hc_mcsset[16];      /* supported MCS set */
+    uint16_t    hc_extcap;          /* extended HT capabilities */
+    uint32_t    hc_txbf;            /* txbf capabilities */
+    uint8_t     hc_antenna;         /* antenna capabilities */
+} __attribute__((packed));
+
+struct apple80211_vht_capability {
+    uint32_t    version;
+    uint16_t    cap;        // 4
+    uint32_t    unk1;       // 6
+    uint16_t    unk2;       // 10
+    uint16_t    unk3;       // 12
+    uint16_t    unk4;       // 14
+    uint16_t    unk5;       // 16
+    uint16_t    unk6;       // 18
 } __attribute__((packed));
 
 struct apple80211_channel_data
@@ -915,10 +926,26 @@ struct apple80211_awdl_election_rssi_thresholds {
     uint32_t    unk3;
 } __attribute__((packed));
 
+struct apple80211_channel_sequence {
+    uint16_t    flags;
+    uint8_t     pad;
+} __attribute__((packed));
+
 struct apple80211_awdl_sync_channel_sequence {
     uint32_t    version;
-    
+    uint8_t     pad1;
+    uint8_t     length;             // 5
+    uint8_t     encoding;           // 6
+    uint8_t     step_count;         // 7
+    uint8_t     duplicate_count;    // 8
+    uint8_t     fill_channel;       // 9
+    uint8_t     pad2[6];
+    struct apple80211_channel_sequence seqs[APPLE80211_MAX_CHANNELS];
 } __attribute__((packed));
+
+static_assert(__offsetof(apple80211_awdl_sync_channel_sequence, seqs) == 16, "seqs offset error");
+
+static_assert(sizeof(struct apple80211_awdl_sync_channel_sequence) == 0x190, "apple80211_awdl_sync_channel_sequence struct corrupt");
 
 struct apple80211_awdl_presence_mode {
     uint32_t    version;
@@ -998,6 +1025,36 @@ struct apple80211_roam_profile_band_data {
 } __attribute__((packed));
 
 static_assert(sizeof(struct apple80211_roam_profile_band_data) == 76, "roam data size error");
+
+struct apple80211_ie_data {
+    uint32_t    version;
+    uint32_t    frame_type_flags;   // 4
+    uint32_t    add;                // 8
+    uint32_t    signature_len;      // 12
+    uint32_t    ie_len;             // 16
+    uint32_t    pad1;               // 20
+    uint8_t     ie[2048];
+} __attribute__((packed));
+
+struct apple80211_p2p_listen_data {
+    uint32_t    version;
+    uint32_t    pad1;
+    uint32_t    channel;        // 8
+    uint32_t    flags;          // 12
+    uint32_t    duration;       // 16
+} __attribute__((packed));
+
+struct apple80211_p2p_go_conf_data {
+    uint32_t    version;
+    uint32_t    auth_upper;     // 4 should equal to 1
+    uint32_t    auth_lower;     // 6 should non zero
+    void        *dynbcn;        // 8
+    uint32_t    channel;        // 12
+    uint32_t    bcn_len;        // 16
+    uint32_t    ssid_len;       // 20
+    uint8_t     ssid[32];       // 24
+    uint32_t    suppress_beacon;// 56 security:1,4
+} __attribute__((packed));
 
 #endif // _APPLE80211_IOCTL_H_
 

@@ -86,6 +86,9 @@ public:
                                const IONetworkMedium * activeMedium = 0,
                                UInt64                  speed        = 0,
                                OSData *                data         = 0) override;
+#ifdef __PRIVATE_SPI__
+    virtual IOReturn outputStart(IONetworkInterface *interface, IOOptionBits options) override;
+#endif
     
     void releaseAll();
     void associateSSID(uint8_t *ssid, uint32_t ssid_len, const struct ether_addr &bssid, uint32_t authtype_lower, uint32_t authtype_upper, uint8_t *key, uint32_t key_len, int key_index);
@@ -177,6 +180,7 @@ public:
     FUNC_IOCTL(SYNC_ENABLED, apple80211_awdl_sync_enabled)
     FUNC_IOCTL(SYNC_FRAME_TEMPLATE, apple80211_awdl_sync_frame_template)
     FUNC_IOCTL_GET(AWDL_HT_CAPABILITY, apple80211_ht_capability)
+    FUNC_IOCTL_GET(AWDL_VHT_CAPABILITY, apple80211_vht_capability)
     
     //AWDL
     FUNC_IOCTL(AWDL_BSSID, apple80211_awdl_bssid)
@@ -197,6 +201,10 @@ public:
     FUNC_IOCTL_SET(AWDL_OOB_AUTO_REQUEST, apple80211_awdl_oob_request)
     FUNC_IOCTL(ROAM_PROFILE, apple80211_roam_profile_band_data)
     FUNC_IOCTL(WOW_PARAMETERS, apple80211_wow_parameter_data)
+    FUNC_IOCTL(IE, apple80211_ie_data)
+    FUNC_IOCTL_SET(P2P_SCAN, apple80211_scan_data)
+    FUNC_IOCTL_SET(P2P_LISTEN, apple80211_p2p_listen_data)
+    FUNC_IOCTL_SET(P2P_GO_CONF, apple80211_p2p_go_conf_data)
     
     
     //-----------------------------------------------------------------------

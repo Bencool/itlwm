@@ -73,8 +73,7 @@ apple80211VirtualRequest(UInt request_type, int request_number, IO80211VirtualIn
             IOCTL_GET(request_type, AWDL_HT_CAPABILITY, apple80211_ht_capability);
             break;
         case APPLE80211_IOC_VHT_CAPABILITY:
-            *(uint32_t*)data = 1;
-            ret = kIOReturnSuccess;
+            IOCTL_GET(request_type, AWDL_VHT_CAPABILITY, apple80211_vht_capability);
             break;
         case APPLE80211_IOC_AWDL_ELECTION_METRIC:
             IOCTL(request_type, AWDL_ELECTION_METRIC, apple80211_awdl_election_metric);
@@ -126,6 +125,18 @@ apple80211VirtualRequest(UInt request_type, int request_number, IO80211VirtualIn
             break;
         case APPLE80211_IOC_AWDL_OOB_AUTO_REQUEST:
             IOCTL_SET(request_type, AWDL_OOB_AUTO_REQUEST, apple80211_awdl_oob_request);
+            break;
+        case APPLE80211_IOC_IE:
+            IOCTL(request_type, IE, apple80211_ie_data);
+            break;
+        case APPLE80211_IOC_P2P_LISTEN:
+            IOCTL_SET(request_type, P2P_LISTEN, apple80211_p2p_listen_data);
+            break;
+        case APPLE80211_IOC_P2P_SCAN:
+            IOCTL_SET(request_type, P2P_SCAN, apple80211_scan_data);
+            break;
+        case APPLE80211_IOC_P2P_GO_CONF:
+            IOCTL_SET(request_type, P2P_GO_CONF, apple80211_p2p_go_conf_data);
             break;
         default:
         unhandled:
@@ -239,6 +250,18 @@ getAWDL_HT_CAPABILITY(OSObject *object, struct apple80211_ht_capability *data)
 {
     memset(data, 0, sizeof(*data));
     data->version = APPLE80211_VERSION;
+    data->hc_id = IEEE80211_ELEMID_HTCAPS;
+    data->hc_cap = (IEEE80211_HTCAP_SGI20 | IEEE80211_HTCAP_CBW20_40 | IEEE80211_HTCAP_SGI40);
+    return kIOReturnSuccess;
+}
+
+IOReturn AirportItlwm::
+getAWDL_VHT_CAPABILITY(OSObject *object, struct apple80211_vht_capability *data)
+{
+    memset(data, 0, sizeof(*data));
+    data->version = APPLE80211_VERSION;
+    data->cap = 3263;
+
     return kIOReturnSuccess;
 }
 
@@ -387,10 +410,26 @@ getAWDL_SYNCHRONIZATION_CHANNEL_SEQUENCE(OSObject *object, struct apple80211_awd
     return kIOReturnSuccess;
 }
 
+static void dumpAWDLChannelSeqs(struct apple80211_awdl_sync_channel_sequence *data)
+{
+    if (data == nullptr) {
+        return;
+    }
+    XYLog("%s length %u step count %u duplicate %u fill %d encoding %u\n", __FUNCTION__, data->length, data->step_count, data->duplicate_count, data->fill_channel, data->encoding);
+    for (int i = 0; i < data->length; i++) {
+        struct apple80211_channel_sequence seq = data->seqs[i];
+        uint16_t band = seq.flags & 0xC00;
+        uint16_t channel = seq.flags & 0x300;
+
+        XYLog("%s %d 0x%04x=%d%s%s%s\n", __FUNCTION__, i, seq.flags, (uint8_t)seq.flags, band != 0x800 ? (band == 0xC00 ? ",20MHz" : ",unknown") : ",20MHz", channel != 0x200 ? (channel == 0x100 ? ",-1" : ",none") : ",1", (seq.flags & 0xF000) == 4096 ? ",5GHz" : ",unknown");
+    }
+}
+
 IOReturn AirportItlwm::
 setAWDL_SYNCHRONIZATION_CHANNEL_SEQUENCE(OSObject *object, struct apple80211_awdl_sync_channel_sequence *data)
 {
     XYLog("%s\n", __FUNCTION__);
+    dumpAWDLChannelSeqs(data);
     return kIOReturnSuccess;
 }
 
